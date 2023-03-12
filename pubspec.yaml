@@ -1,0 +1,27 @@
+name: barcode_ricette
+description: A new Flutter project.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=2.19.2 <3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  permission_handler: ^10.2.0
+  barcode_widget:
+  path_provider: ^2.0.12
+  flutter_sms_inbox: ^1.0.2
+  flutter_colorpicker: ^1.0.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    
