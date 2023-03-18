@@ -2,10 +2,10 @@ import 'package:barcode_ricette/home/controller/controller.dart';
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:barcode_ricette/constants.dart';
-import 'package:barcode_ricette/data_store_widgets.dart';
 import 'package:barcode_ricette/model/model.dart';
 import 'package:barcode_ricette/helpers.dart';
 import 'package:barcode_ricette/gestione_utenti/view/gestione_utenti.dart';
+import 'package:barcode_ricette/data_store_widgets.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -16,19 +16,7 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   bool _selectMode = false;
-  late List<bool> _selected;
-  late HomeController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = HomeController(
-      () {
-        setState(() {});
-      },
-    );
-    _selected = List.filled(_controller.listaRicette.length, false);
-  }
+  final List<int> _selected = [];
 
   @override
   Widget build(BuildContext context) {
@@ -45,16 +33,29 @@ class _HomeState extends State<Home> {
                   : null,
               actions: [
                 if (_selectMode)
-                  IconButton(
-                      onPressed: _onDeleteRicetteButtonPressed,
-                      icon: const Icon(Icons.delete)),
-                IconButton(
-                    onPressed: _onCheckNewSmsButtonPressed,
-                    icon: const Icon(Icons.download)),
+                  Builder(builder: (context) {
+                    HomeController controller =
+                        DataStore.of<HomeController>(context);
+                    return IconButton(
+                        onPressed: () =>
+                            _onDeleteRicetteButtonPressed(controller),
+                        icon: const Icon(Icons.delete));
+                  }),
+                Builder(
+                  builder: (context) {
+                    HomeController controller =
+                        DataStore.of<HomeController>(context);
+                    return IconButton(
+                        onPressed: _onCheckNewSmsButtonPressed,
+                        icon: const Icon(Icons.download));
+                  },
+                ),
                 Builder(builder: (context) {
+                  HomeController controller =
+                      DataStore.of<HomeController>(context);
                   return IconButton(
                       onPressed: () {
-                        _controller.save().then((salvati) {
+                        controller.save().then((salvati) {
                           final String msg =
                               salvati ? C.snkDatiSalvati : C.snkDatiNonSalvati;
                           _displaySnackBar(context, msg);
@@ -77,16 +78,21 @@ class _HomeState extends State<Home> {
                 )
               ],
             ),
-            body: Center(
-                child: _controller.listaRicette.isEmpty
+            body: Center(child: Builder(
+              builder: (context) {
+                HomeController controller =
+                    DataStore.of<HomeController>(context);
+                return controller.listaRicette.isEmpty
                     ? _buildNoRicetteView()
-                    : _buildListView())));
+                    : _buildListView(controller);
+              },
+            ))));
   }
 
   void _backButtonPressed() {
     setState(() {
       _selectMode = false;
-      _selected = List.filled(_controller.listaRicette.length, false);
+      _selected.clear();
     });
   }
 
@@ -94,53 +100,57 @@ class _HomeState extends State<Home> {
     // do stuff
   }
 
-  void _onDeleteRicetteButtonPressed() {
-    List<Ricetta> toBeDeleted = []; // ricette da eliminare
-    for (int i = 0; i < _controller.listaRicette.length; i++) {
-      if (_selected[i]) {
-        toBeDeleted.add(_controller.listaRicette[i]);
-      }
-    }
-    _controller.deleteRicette(toBeDeleted);
+  void _onDeleteRicetteButtonPressed(HomeController controller) {
+    List<Ricetta> toBeDeleted = _selected
+        .map((index) => controller.listaRicette[index])
+        .toList(); // ricette da eliminare
+    controller.deleteRicette(toBeDeleted);
+    setState(() {
+      _selectMode = false;
+      _selected.clear();
+    });
   }
 
-  Widget _buildListView() {
+  Widget _buildListView(HomeController controller) {
     return ListView.separated(
       padding: const EdgeInsets.all(5),
-      itemCount: _controller.listaRicette.length,
+      itemCount: controller.listaRicette.length,
       itemBuilder: (context, index) {
         return GestureDetector(
           onLongPress: () {
             if (!_selectMode) {
               setState(() {
                 _selectMode = true;
-                _selected[index] = !_selected[index];
+                _selected.contains(index)
+                    ? _selected.remove(index)
+                    : _selected.add(index);
               });
             }
           },
           onTap: () {
             if (_selectMode) {
               setState(() {
-                _selected[index] = !_selected[index];
+                _selected.contains(index)
+                    ? _selected.remove(index)
+                    : _selected.add(index);
               });
             } else {
               showDialog(
                 barrierDismissible: false,
                 context: context,
                 builder: (context) => BarCodeRicettaDialog(
-                    ricetta: _controller.listaRicette[index]),
+                    ricetta: controller.listaRicette[index]),
               ).then((_) {
-                _controller.listaRicette[index].letto = true;
-                DataStore.updatedOf<Model>(context);
+                controller.listaRicette[index].letto = true;
               });
             }
           },
           child: Container(
-              color: _controller.listaRicette[index].letto
-                  ? _selected[index]
+              color: controller.listaRicette[index].letto
+                  ? _selected.contains(index)
                       ? C.colRicettaSelezionata
                       : Colors.transparent
-                  : _selected[index]
+                  : _selected.contains(index)
                       ? C.colRicettaNonLettaSelezionata
                       : C.colRicettaNonLetta,
               padding: const EdgeInsets.all(2),
@@ -153,24 +163,24 @@ class _HomeState extends State<Home> {
                   Container(
                     padding: const EdgeInsets.only(left: 4),
                     child: Text(DateFormatter.formatDate(
-                        _controller.listaRicette[index].data)),
+                        controller.listaRicette[index].data)),
                   ),
                   Container(
                       padding: const EdgeInsets.only(left: 4),
                       child:
-                          Text(_controller.listaRicette[index].codiceFiscale)),
+                          Text(controller.listaRicette[index].codiceFiscale)),
                   Container(
                       padding: const EdgeInsets.only(left: 4),
                       child:
-                          Text(_controller.listaRicette[index].codiceRegione)),
+                          Text(controller.listaRicette[index].codiceRegione)),
                   Container(
                       padding: const EdgeInsets.only(left: 4),
                       child:
-                          Text(_controller.listaRicette[index].codiceRicetta)),
+                          Text(controller.listaRicette[index].codiceRicetta)),
                   Container(
                     padding: const EdgeInsets.only(left: 4),
                     child: Icon(Icons.star,
-                        color: _controller.listaRicette[index].nuovo
+                        color: controller.listaRicette[index].nuovo
                             ? C.colNuovaRicettaStella
                             : C.colNotEnabled),
                   )

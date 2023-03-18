@@ -75,9 +75,7 @@ class Model with ChangeNotifier {
   Future<void> init() async {
     _instance.archivioUtenti =
         await FileManager().loadArchivioUtenti(); // load data from files
-    archivioUtenti.addListener(() {
-      notifyListeners();
-    });
+    archivioUtenti.addListener(notifyListeners);
     _instance.centroRicette = CentroRicette(_instance.archivioUtenti);
     _instance.centroRicette.assegnaRicette(
         await SmsHelper().fetchSmsRicette()); // look for new Ricette
@@ -102,12 +100,14 @@ class Utente extends Comparable<Utente> with ChangeNotifier {
       : archivioRicette = archivio;
 
   factory Utente.fromJson(dynamic json) {
-    return Utente.conRicette(
+    Utente u = Utente.conRicette(
         json['nome'],
         json['codiceFiscale'],
         Color(int.parse(json['colore'], radix: 16)),
         json['immagine'],
         ArchivioRicette.fromJson(json['archivioRicette']));
+    u.archivioRicette.addListener(u.notifyListeners);
+    return u;
   }
 
   Map toJson() => {
@@ -164,17 +164,19 @@ class Utente extends Comparable<Utente> with ChangeNotifier {
 class ArchivioRicette with ChangeNotifier {
   late final List<Ricetta>
       _ricette; // si assume *sempre* ordinata per data [piu vecchia --> piu nuova]
+  static const String _ricetteKey = 'ricette';
 
   ArchivioRicette.empty() : _ricette = [];
-  ArchivioRicette.fromList(List<Ricetta> l) : _ricette = l;
   ArchivioRicette.fromJson(dynamic json) {
-    var listaRicetteJson = json['ricette'] as List;
-    _ricette = listaRicetteJson
-        .map((ricettaJson) => Ricetta.fromJson(ricettaJson))
-        .toList();
+    var listaRicetteJson = json[_ricetteKey] as List;
+    _ricette = listaRicetteJson.map((ricettaJson) {
+      Ricetta r = Ricetta.fromJson(ricettaJson);
+      r.addListener(notifyListeners);
+      return r;
+    }).toList();
   }
 
-  Map toJson() => {'ricette': _ricette};
+  Map toJson() => {_ricetteKey: _ricette};
 
   List<Ricetta> get listaRicette => List.from(_ricette,
       growable: false); //should be read only, it'as a copy anyway
@@ -207,7 +209,9 @@ class ArchivioRicette with ChangeNotifier {
   }
 
   void removeRicetta(Ricetta r) {
-    if (_removeRicetta(r)) notifyListeners();
+    if (_removeRicetta(r)) {
+      notifyListeners();
+    }
   }
 
   void removeListaRicette(List<Ricetta> lista) {
@@ -227,6 +231,9 @@ class ArchivioUtenti with ChangeNotifier {
 
   ArchivioUtenti.empty() : _utenti = [];
   ArchivioUtenti._(this._utenti) {
+    for (Utente u in _utenti) {
+      u.addListener(notifyListeners);
+    }
     _utenti.sort();
   }
   factory ArchivioUtenti.fromJson(dynamic json) {

@@ -3,6 +3,8 @@ import 'package:barcode_ricette/constants.dart';
 import 'package:barcode_ricette/model/model.dart';
 import 'package:barcode_ricette/helpers.dart';
 import 'package:barcode_ricette/home/view/home.dart';
+import 'package:barcode_ricette/home/controller/controller.dart';
+import 'data_store_widgets.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +21,8 @@ class AppInit extends StatelessWidget {
         builder: (_, AsyncSnapshot<void> snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             // DataStore
-            return const Home();
+            return DataStore<HomeController>(
+                data: HomeController(), child: const Home());
           } else if (snapshot.hasError) {
             // messaggio errore
             return _materialApp(_buildErrorWidget(snapshot.error.toString()));
