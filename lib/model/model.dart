@@ -10,6 +10,7 @@ class Ricetta extends Comparable<Ricetta> with ChangeNotifier {
   final String codiceFiscale;
   bool _letto;
   bool _nuovo;
+  late ArchivioRicette archivio;
 
   Ricetta.nuova(
       this.data, this.codiceRegione, this.codiceRicetta, this.codiceFiscale)
@@ -97,7 +98,9 @@ class Utente extends Comparable<Utente> with ChangeNotifier {
       : archivioRicette = ArchivioRicette.empty();
   Utente.conRicette(this._nome, this._codiceFiscale, this._colore,
       this._immagine, ArchivioRicette archivio)
-      : archivioRicette = archivio;
+      : archivioRicette = archivio {
+    archivioRicette.utente = this;
+  }
 
   factory Utente.fromJson(dynamic json) {
     Utente u = Utente.conRicette(
@@ -164,6 +167,7 @@ class Utente extends Comparable<Utente> with ChangeNotifier {
 class ArchivioRicette with ChangeNotifier {
   late final List<Ricetta>
       _ricette; // si assume *sempre* ordinata per data [piu vecchia --> piu nuova]
+  late final Utente utente;
   static const String _ricetteKey = 'ricette';
 
   ArchivioRicette.empty() : _ricette = [];
@@ -171,6 +175,7 @@ class ArchivioRicette with ChangeNotifier {
     var listaRicetteJson = json[_ricetteKey] as List;
     _ricette = listaRicetteJson.map((ricettaJson) {
       Ricetta r = Ricetta.fromJson(ricettaJson);
+      r.archivio = this;
       r.addListener(notifyListeners);
       return r;
     }).toList();

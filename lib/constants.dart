@@ -6,6 +6,8 @@ class C {
   static const double larghezzaBarCode = 500;
   static const double altezzaBarCode = 100;
   static const double dimEmptyBox = 100;
+  static const double altezzaRigaRicetta = 30;
+  static const double larghezzaRettangoloColore = 15;
 
   // colori
   static Color colRicettaNonLetta = Colors.blue[50]!;
@@ -13,7 +15,7 @@ class C {
   static Color colRicettaNonLettaSelezionata = Colors.indigo[100]!;
   static Color colNuovaRicettaStella = Colors.orange[300]!;
   static Color colNotEnabled = Colors.grey[500]!;
-  static Color colSeparator = Colors.grey[700]!;
+  static Color colSeparator = Colors.grey[300]!;
   static Color colDefaultPickerColor = Colors.yellow[100]!;
 
   // stringhe

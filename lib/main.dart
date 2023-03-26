@@ -22,7 +22,7 @@ class AppInit extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.done) {
             // DataStore
             return DataStore<HomeController>(
-                data: HomeController(), child: const Home());
+                data: HomeController(), child: const MaterialApp(home: Home()));
           } else if (snapshot.hasError) {
             // messaggio errore
             return _materialApp(_buildErrorWidget(snapshot.error.toString()));

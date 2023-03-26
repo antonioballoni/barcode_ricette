@@ -25,50 +25,49 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-        home: Scaffold(
-            appBar: AppBar(
-              title: const Text(C.strAppName),
-              elevation: 0,
-              automaticallyImplyLeading: false,
-              leading: _controller!.selectMode
-                  ? IconButton(
-                      onPressed: _backButtonPressed,
-                      icon: const Icon(Icons.arrow_back))
-                  : null,
-              actions: [
-                if (_controller!.selectMode)
-                  IconButton(
-                      onPressed: () => _onDeleteRicetteButtonPressed(),
-                      icon: const Icon(Icons.delete)),
-                IconButton(
-                    onPressed: _onCheckNewSmsButtonPressed,
-                    icon: const Icon(Icons.download)),
-                IconButton(
-                    onPressed: () {
-                      _controller!.save().then((salvati) {
-                        final String msg =
-                            salvati ? C.snkDatiSalvati : C.snkDatiNonSalvati;
-                        _displaySnackBar(context, msg);
-                      });
-                    },
-                    icon: const Icon(Icons.save)),
-                IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const GestioneUtenti()),
-                      );
-                    },
-                    icon: const Icon(Icons.people_alt_rounded))
-              ],
-            ),
-            body: Center(
-              child: _controller!.listaRicette.isEmpty
-                  ? _buildNoRicetteView()
-                  : _buildListView(),
-            )));
+    return Scaffold(
+        appBar: AppBar(
+          title: const Text(C.strAppName),
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          leading: _controller!.selectMode
+              ? IconButton(
+                  onPressed: _backButtonPressed,
+                  icon: const Icon(Icons.arrow_back))
+              : null,
+          actions: [
+            if (_controller!.selectMode)
+              IconButton(
+                  onPressed: () => _onDeleteRicetteButtonPressed(),
+                  icon: const Icon(Icons.delete)),
+            IconButton(
+                onPressed: _onCheckNewSmsButtonPressed,
+                icon: const Icon(Icons.download)),
+            IconButton(
+                onPressed: () {
+                  _controller!.save().then((salvati) {
+                    final String msg =
+                        salvati ? C.snkDatiSalvati : C.snkDatiNonSalvati;
+                    _displaySnackBar(context, msg);
+                  });
+                },
+                icon: const Icon(Icons.save)),
+            IconButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const GestioneUtenti()),
+                  );
+                },
+                icon: const Icon(Icons.people_alt_rounded))
+          ],
+        ),
+        body: Center(
+          child: _controller!.listaRicette.isEmpty
+              ? _buildNoRicetteView()
+              : _buildListView(),
+        ));
   }
 
   void _backButtonPressed() {
@@ -85,7 +84,6 @@ class _HomeState extends State<Home> {
 
   Widget _buildListView() {
     return ListView.separated(
-      padding: const EdgeInsets.all(5),
       itemCount: _controller!.listaRicette.length,
       itemBuilder: (context, index) {
         return GestureDetector(
@@ -110,11 +108,17 @@ class _HomeState extends State<Home> {
               color: _controller!.itemColor(index),
               padding: const EdgeInsets.all(2),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Container(
-                    width: 3,
-                  ), // todo color (devo avere riferimento all'utente)
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                        color: _controller!.listaRicette[index].archivio.utente
+                            .colore), // todo color (devo avere riferimento all'utente)
+                    child: const SizedBox(
+                      width: C.larghezzaRettangoloColore,
+                      height: C.altezzaRigaRicetta,
+                    ),
+                  ),
                   Container(
                     padding: const EdgeInsets.only(left: 4),
                     child: Text(DateFormatter.formatDate(
@@ -141,7 +145,7 @@ class _HomeState extends State<Home> {
         );
       },
       separatorBuilder: (context, index) {
-        return Divider(height: 1, thickness: 1, color: C.colSeparator);
+        return Divider(height: 1, thickness: 0, color: C.colSeparator);
       },
     );
   }
