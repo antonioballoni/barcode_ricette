@@ -15,8 +15,13 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  bool _selectMode = false;
-  final List<int> _selected = [];
+  HomeController? _controller;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _controller ??= DataStore.of<HomeController>(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,133 +31,83 @@ class _HomeState extends State<Home> {
               title: const Text(C.strAppName),
               elevation: 0,
               automaticallyImplyLeading: false,
-              leading: _selectMode
+              leading: _controller!.selectMode
                   ? IconButton(
                       onPressed: _backButtonPressed,
                       icon: const Icon(Icons.arrow_back))
                   : null,
               actions: [
-                if (_selectMode)
-                  Builder(builder: (context) {
-                    HomeController controller =
-                        DataStore.of<HomeController>(context);
-                    return IconButton(
-                        onPressed: () =>
-                            _onDeleteRicetteButtonPressed(controller),
-                        icon: const Icon(Icons.delete));
-                  }),
-                Builder(
-                  builder: (context) {
-                    HomeController controller =
-                        DataStore.of<HomeController>(context);
-                    return IconButton(
-                        onPressed: _onCheckNewSmsButtonPressed,
-                        icon: const Icon(Icons.download));
-                  },
-                ),
-                Builder(builder: (context) {
-                  HomeController controller =
-                      DataStore.of<HomeController>(context);
-                  return IconButton(
-                      onPressed: () {
-                        controller.save().then((salvati) {
-                          final String msg =
-                              salvati ? C.snkDatiSalvati : C.snkDatiNonSalvati;
-                          _displaySnackBar(context, msg);
-                        });
-                      },
-                      icon: const Icon(Icons.save));
-                }),
-                Builder(
-                  builder: (context) {
-                    return IconButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const GestioneUtenti()),
-                          );
-                        },
-                        icon: const Icon(Icons.people_alt_rounded));
-                  },
-                )
+                if (_controller!.selectMode)
+                  IconButton(
+                      onPressed: () => _onDeleteRicetteButtonPressed(),
+                      icon: const Icon(Icons.delete)),
+                IconButton(
+                    onPressed: _onCheckNewSmsButtonPressed,
+                    icon: const Icon(Icons.download)),
+                IconButton(
+                    onPressed: () {
+                      _controller!.save().then((salvati) {
+                        final String msg =
+                            salvati ? C.snkDatiSalvati : C.snkDatiNonSalvati;
+                        _displaySnackBar(context, msg);
+                      });
+                    },
+                    icon: const Icon(Icons.save)),
+                IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const GestioneUtenti()),
+                      );
+                    },
+                    icon: const Icon(Icons.people_alt_rounded))
               ],
             ),
-            body: Center(child: Builder(
-              builder: (context) {
-                HomeController controller =
-                    DataStore.of<HomeController>(context);
-                return controller.listaRicette.isEmpty
-                    ? _buildNoRicetteView()
-                    : _buildListView(controller);
-              },
-            ))));
+            body: Center(
+              child: _controller!.listaRicette.isEmpty
+                  ? _buildNoRicetteView()
+                  : _buildListView(),
+            )));
   }
 
   void _backButtonPressed() {
-    setState(() {
-      _selectMode = false;
-      _selected.clear();
-    });
+    _controller!.exitSelectMode();
   }
 
   void _onCheckNewSmsButtonPressed() {
     // do stuff
   }
 
-  void _onDeleteRicetteButtonPressed(HomeController controller) {
-    List<Ricetta> toBeDeleted = _selected
-        .map((index) => controller.listaRicette[index])
-        .toList(); // ricette da eliminare
-    controller.deleteRicette(toBeDeleted);
-    setState(() {
-      _selectMode = false;
-      _selected.clear();
-    });
+  void _onDeleteRicetteButtonPressed() {
+    _controller!.deleteRicette();
   }
 
-  Widget _buildListView(HomeController controller) {
+  Widget _buildListView() {
     return ListView.separated(
       padding: const EdgeInsets.all(5),
-      itemCount: controller.listaRicette.length,
+      itemCount: _controller!.listaRicette.length,
       itemBuilder: (context, index) {
         return GestureDetector(
           onLongPress: () {
-            if (!_selectMode) {
-              setState(() {
-                _selectMode = true;
-                _selected.contains(index)
-                    ? _selected.remove(index)
-                    : _selected.add(index);
-              });
-            }
+            _controller!.selectModeOn(index);
           },
           onTap: () {
-            if (_selectMode) {
-              setState(() {
-                _selected.contains(index)
-                    ? _selected.remove(index)
-                    : _selected.add(index);
-              });
+            if (_controller!.selectMode) {
+              _controller!.toggleSelectedElement(index);
             } else {
               showDialog(
                 barrierDismissible: false,
                 context: context,
                 builder: (context) => BarCodeRicettaDialog(
-                    ricetta: controller.listaRicette[index]),
+                    ricetta: _controller!.listaRicette[index]),
               ).then((_) {
-                controller.listaRicette[index].letto = true;
+                _controller!.markAsRead(index);
               });
             }
           },
           child: Container(
-              color: controller.listaRicette[index].letto
-                  ? _selected.contains(index)
-                      ? C.colRicettaSelezionata
-                      : Colors.transparent
-                  : _selected.contains(index)
-                      ? C.colRicettaNonLettaSelezionata
-                      : C.colRicettaNonLetta,
+              color: _controller!.itemColor(index),
               padding: const EdgeInsets.all(2),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
@@ -163,27 +118,24 @@ class _HomeState extends State<Home> {
                   Container(
                     padding: const EdgeInsets.only(left: 4),
                     child: Text(DateFormatter.formatDate(
-                        controller.listaRicette[index].data)),
+                        _controller!.listaRicette[index].data)),
                   ),
                   Container(
                       padding: const EdgeInsets.only(left: 4),
                       child:
-                          Text(controller.listaRicette[index].codiceFiscale)),
+                          Text(_controller!.listaRicette[index].codiceFiscale)),
                   Container(
                       padding: const EdgeInsets.only(left: 4),
                       child:
-                          Text(controller.listaRicette[index].codiceRegione)),
+                          Text(_controller!.listaRicette[index].codiceRegione)),
                   Container(
                       padding: const EdgeInsets.only(left: 4),
                       child:
-                          Text(controller.listaRicette[index].codiceRicetta)),
+                          Text(_controller!.listaRicette[index].codiceRicetta)),
                   Container(
-                    padding: const EdgeInsets.only(left: 4),
-                    child: Icon(Icons.star,
-                        color: controller.listaRicette[index].nuovo
-                            ? C.colNuovaRicettaStella
-                            : C.colNotEnabled),
-                  )
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Icon(Icons.star,
+                          color: _controller!.starColor(index)))
                 ],
               )),
         );
