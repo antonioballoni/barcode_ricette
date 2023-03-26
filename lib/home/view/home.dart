@@ -1,3 +1,4 @@
+import 'package:barcode_ricette/gestione_utenti/controller/controller.dart';
 import 'package:barcode_ricette/home/controller/controller.dart';
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter/material.dart';
@@ -55,10 +56,13 @@ class _HomeState extends State<Home> {
             IconButton(
                 onPressed: () {
                   Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const GestioneUtenti()),
-                  );
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            DataStore<GestioneUtentiController>(
+                                data: GestioneUtentiController(),
+                                child: const GestioneUtenti()),
+                      ));
                 },
                 icon: const Icon(Icons.people_alt_rounded))
           ],

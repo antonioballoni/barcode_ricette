@@ -3,6 +3,7 @@ import 'package:barcode_ricette/gestione_utenti/controller/controller.dart';
 import 'package:flutter/material.dart';
 import 'package:barcode_ricette/model/model.dart';
 import 'package:barcode_ricette/constants.dart';
+import 'package:barcode_ricette/data_store_widgets.dart';
 
 class GestioneUtenti extends StatefulWidget {
   const GestioneUtenti({super.key});
@@ -11,17 +12,12 @@ class GestioneUtenti extends StatefulWidget {
 }
 
 class _GestioneUtentiState extends State<GestioneUtenti> {
-  int? _selectedItemIndex;
-  late GestioneUtentiController _controller;
+  GestioneUtentiController? _controller;
 
   @override
-  void initState() {
-    super.initState();
-    _controller = GestioneUtentiController(
-      () {
-        setState(() {});
-      },
-    );
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _controller ??= DataStore.of<GestioneUtentiController>(context);
   }
 
   @override
@@ -30,26 +26,23 @@ class _GestioneUtentiState extends State<GestioneUtenti> {
       appBar: AppBar(
         title: const Text(C.screenGestioneUtenti),
         actions: [
-          if (_selectedItemIndex != null)
+          if (_controller!.isAnythingSelected)
             IconButton(
                 onPressed: () {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => FormUtente(
-                              utente:
-                                  _controller.allUtenti[_selectedItemIndex!])));
+                          builder: (context) =>
+                              FormUtente(utente: _controller!.selectedUtente)));
                 },
                 icon: const Icon(Icons.edit)),
-          if (_selectedItemIndex != null)
+          if (_controller!.isAnythingSelected)
             IconButton(
                 onPressed: () {
-                  _showDeleteDialog(_controller.allUtenti[_selectedItemIndex!])
-                      .then(
+                  _showDeleteDialog(_controller!.selectedUtente!).then(
                     (delete) {
                       if (delete!) {
-                        _controller.removeUtenteAt(_selectedItemIndex!);
-                        _selectedItemIndex = null; // necessary?
+                        _controller!.removeSelectedUtente();
                       }
                     },
                   );
@@ -58,7 +51,7 @@ class _GestioneUtentiState extends State<GestioneUtenti> {
         ],
       ),
       body: Center(
-          child: _controller.allUtenti.isEmpty
+          child: _controller!.allUtenti.isEmpty
               ? const SizedBox(
                   width: C.dimEmptyBox,
                   height: C.dimEmptyBox,
@@ -66,25 +59,19 @@ class _GestioneUtentiState extends State<GestioneUtenti> {
               : ListView.separated(
                   itemBuilder: (context, index) {
                     return GestureDetector(
-                      onLongPress: () {
-                        setState(() {
-                          _selectedItemIndex =
-                              _selectedItemIndex == index ? null : index;
-                        });
+                      onTap: () {
+                        _controller!.selectedItemIndex = index;
                       },
                       child: Container(
-                          height: 50,
-                          color: _controller.allUtenti[index].colore,
-                          padding: const EdgeInsets.all(4),
+                          padding: const EdgeInsets.all(2),
+                          color: _controller!.itemBackgroundColor(index),
                           child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              mainAxisAlignment: MainAxisAlignment.start,
                               children: [
                                 Container(
-                                  width: 3,
-                                  height: 30,
-                                  color: index == _selectedItemIndex
-                                      ? Colors.blueAccent
-                                      : Colors.transparent,
+                                  color: _controller!.allUtenti[index].colore,
+                                  width: C.larghezzaRettangoloColore,
+                                  height: C.altezzaRigaRicetta,
                                 ),
                                 Container(
                                   padding: const EdgeInsets.all(2),
@@ -96,20 +83,20 @@ class _GestioneUtentiState extends State<GestioneUtenti> {
                                       image:
                                           AssetImage(C.imgDefaultUtenteImage)),
                                 ),
-                                Text(_controller.allUtenti[index].nome),
-                                Text(
-                                    _controller.allUtenti[index].codiceFiscale),
+                                Text(_controller!.allUtenti[index].nome),
+                                Text(_controller!
+                                    .allUtenti[index].codiceFiscale),
                               ])),
                     );
                   },
                   separatorBuilder: (context, index) {
                     return Divider(
                       height: 1,
-                      thickness: 1,
+                      thickness: 0,
                       color: C.colSeparator,
                     );
                   },
-                  itemCount: _controller.allUtenti.length)),
+                  itemCount: _controller!.allUtenti.length)),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(

@@ -194,6 +194,7 @@ class ArchivioRicette with ChangeNotifier {
     if (_ricette.contains(r)) {
       return false;
     } else {
+      r.archivio = this;
       _ricette.add(r);
       _ricette.sort();
       r.addListener(() {
@@ -309,9 +310,10 @@ class CentroRicette {
       var cfMatch = RegExp(C.regexpChiaveCodiceFiscale).firstMatch(sms.body!);
       if (cfMatch != null) {
         String chiaveCF = cfMatch[0]!.split('*')[0]; // levo il * dalla stringa
-        Utente? u = _mapChiaveUtente[chiaveCF.toUpperCase()];
-        if (u != null) {
-          u.archivioRicette.addRicetta(_smsToRicetta(sms, u.codiceFiscale));
+        Utente? utente = _mapChiaveUtente[chiaveCF.toUpperCase()];
+        if (utente != null) {
+          Ricetta r = _smsToRicetta(sms, utente.codiceFiscale);
+          utente.archivioRicette.addRicetta(r);
         }
         // else ignoro il messaggio, ma andrebbe assegnato a un utente generico
       }
