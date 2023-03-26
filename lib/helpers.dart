@@ -8,7 +8,7 @@ import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 
 class DateFormatter {
   static String formatDate(DateTime d) {
-    return "${d.day}-${d.month.toString().padLeft(2, '0')}-${d.year.toString().padLeft(2, '0')}";
+    return "${d.day.toString().padLeft(2, '0')}-${d.month.toString().padLeft(2, '0')}-${d.year.toString().padLeft(2, '0')}";
   }
 }
 
