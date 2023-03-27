@@ -74,12 +74,10 @@ class Model with ChangeNotifier {
   factory Model() => _instance;
 
   Future<void> init() async {
-    _instance.archivioUtenti =
-        await FileManager().loadArchivioUtenti(); // load data from files
+    archivioUtenti = await FileManager().loadArchivioUtenti(); // load data from files
     archivioUtenti.addListener(notifyListeners);
-    _instance.centroRicette = CentroRicette(_instance.archivioUtenti);
-    _instance.centroRicette.assegnaRicette(
-        await SmsHelper().fetchSmsRicette()); // look for new Ricette
+    centroRicette = CentroRicette(archivioUtenti);
+    centroRicette.assegnaRicette(await SmsHelper().fetchSmsRicette()); // look for new Ricette
   }
 
   Future<bool> save() async {
